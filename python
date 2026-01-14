@@ -1,0 +1,97 @@
+# ==========================================
+# PART 1: IMPORT LIBRARIES & LOAD DATA
+# ==========================================
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
+
+# Load the dataset
+# NOTE: Ensure the file path matches where your CSV is located
+df = pd.read_csv('/kaggle/input/salary/Salary.csv')
+
+# Display first 5 rows to verify data is loaded
+print("--- First 5 Rows of Data ---")
+print(df.head())
+print("-" * 30)
+
+# ==========================================
+# PART 2: DATA PREPROCESSING
+# ==========================================
+# Split dataset into Independent(X) and Dependent(y) Variables
+X = df.iloc[:, :-1].values    # YearsExperience
+y = df.iloc[:, -1].values     # Salary
+
+# Split into Training and Testing sets (70% Train, 30% Test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+
+# ==========================================
+# PART 3: TRAIN LINEAR REGRESSION MODEL
+# ==========================================
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Make predictions on the test set
+predictions = model.predict(X_test)
+
+# Compare Actual vs Predicted (Optional view)
+print("\n--- Predictions vs Actual ---")
+comparison = pd.DataFrame({'Actual': y_test, 'Predicted': predictions})
+print(comparison.head())
+print("-" * 30)
+
+# ==========================================
+# PART 4: VISUALIZE REGRESSION LINE
+# ==========================================
+plt.figure(figsize=(10, 6))
+plt.scatter(X_train, y_train, color='red', label='Training Data') # Plot training data
+plt.plot(X_train, model.predict(X_train), color='blue', label='Best Fit Line') # Plot regression line
+plt.title('Salary vs Experience (Training Set)')
+plt.xlabel('Years of Experience')
+plt.ylabel('Salary')
+plt.legend()
+plt.show()
+
+# ==========================================
+# PART 5: CALCULATE CLASSIFICATION METRICS
+# ==========================================
+# Since Linear Regression predicts continuous numbers, we must convert them 
+# to categories (High/Low) to get a Confusion Matrix.
+
+# 1. Define Threshold: Mean Salary of the Training Data
+threshold = y_train.mean()
+print(f"\nClassification Threshold (Mean Salary): ${threshold:,.2f}")
+
+# 2. Convert to Binary Classes (1 = High Salary, 0 = Low Salary)
+y_test_class = [1 if val >= threshold else 0 for val in y_test]
+y_pred_class = [1 if val >= threshold else 0 for val in predictions]
+
+# 3. Calculate Metrics
+accuracy = accuracy_score(y_test_class, y_pred_class)
+precision = precision_score(y_test_class, y_pred_class)
+recall = recall_score(y_test_class, y_pred_class)
+f1 = f1_score(y_test_class, y_pred_class)
+
+print("\n--- CLASSIFICATION PERFORMANCE REPORT ---")
+print(f"Accuracy:  {accuracy:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall:    {recall:.4f}")
+print(f"F1 Score:  {f1:.4f}")
+print("-" * 30)
+
+# ==========================================
+# PART 6: PLOT CONFUSION MATRIX
+# ==========================================
+cm = confusion_matrix(y_test_class, y_pred_class)
+
+plt.figure(figsize=(7, 5))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=['Low Salary', 'High Salary'],
+            yticklabels=['Low Salary', 'High Salary'])
+plt.title('Confusion Matrix: Predicted vs Actual Salary Band')
+plt.ylabel('Actual Category')
+plt.xlabel('Predicted Category')
+plt.show()
